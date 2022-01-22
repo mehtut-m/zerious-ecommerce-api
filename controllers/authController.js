@@ -1,3 +1,4 @@
+const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
@@ -61,4 +62,28 @@ exports.googleLogin = async (req, res, next) => {
   }
 };
 
-exports.facebookLogin = async (req, res, next) => {};
+exports.facebookLogin = async (req, res, next) => {
+  try {
+    const { accessToken } = req.body;
+    const appid = '4615638975198486';
+    const secid = '1e4ace455d0429e7ea0abef52856fedb';
+
+    const response = await axios
+      .get(
+        `https://graph.facebook.com/v12.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appid}&client_secret=${secid}&fb_exchange_token=${
+          accessToken + 'sdwe'
+        }`
+      )
+      .catch((err) => {
+        res.status(400).json({ message: 'user not found' });
+      });
+    console.log(response.data);
+    // If user is not found
+    if (response.status !== 200) {
+      console.log('hi');
+    }
+    // const get = await axios.get();
+  } catch (error) {
+    console.log(error);
+  }
+};
