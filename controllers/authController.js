@@ -1,6 +1,12 @@
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+
+const {
+  isEmail,
+  isPasswordMatch,
+  isValidName,
+  checkPasswordLength,
+} = require('../services/auth/inputValidator');
 
 // Models Import
 const { User } = require('../models/');
@@ -65,25 +71,142 @@ exports.googleLogin = async (req, res, next) => {
 exports.facebookLogin = async (req, res, next) => {
   try {
     const { accessToken } = req.body;
-    const appid = '4615638975198486';
-    const secid = '1e4ace455d0429e7ea0abef52856fedb';
 
     const response = await axios
       .get(
-        `https://graph.facebook.com/v12.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appid}&client_secret=${secid}&fb_exchange_token=${
-          accessToken + 'sdwe'
-        }`
+        `https://graph.facebook.com/v12.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${process.env.FB_CLIENT_ID}&client_secret=${process.env.FB_SECRET_ID}&fb_exchange_token=${accessToken}`
       )
       .catch((err) => {
         res.status(400).json({ message: 'user not found' });
       });
-    console.log(response.data);
+
     // If user is not found
     if (response.status !== 200) {
-      console.log('hi');
+      return res
+        .status(400)
+        .json({ message: 'user not found or error has occurred' });
     }
-    // const get = await axios.get();
-  } catch (error) {
-    console.log(error);
+
+    //Get user info from access token
+    const {
+      data: {
+        id: facebookId,
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        picture: {
+          data: { url: profileImg },
+        },
+      },
+    } = await axios.get(
+      `https://graph.facebook.com/me?fields=id,first_name,last_name,email,picture&access_token=${response.data.access_token}`
+    );
+
+    const defaultUser = { facebookId, firstName, lastName, email, profileImg };
+
+    const user = await User.findOrCreate({
+      where: { facebookId, email },
+      defaults: defaultUser,
+    });
+
+    req.user = user[0];
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    // Validate email
+    if (!isEmail(email)) {
+      return res.status(400).json({ message: 'Email is not valid' });
+    }
+    // Check password length or empty
+    if (!checkPasswordLength(password)) {
+      return res
+        .status(400)
+        .json({ message: 'Password must be atleast 6 characters' });
+    }
+    // Find user in the database
+    const user = await User.findOne({ where: { email } });
+
+    // If user is not found in database
+    if (!user) {
+      return res.status(400).json({ message: 'Invaild username or password' });
+    }
+
+    // Verify password
+    const isPasswordVerified = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordVerified) {
+      return res.status(400).json({ message: 'Invaild username or password' });
+    }
+    req.user = user;
+    next();
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+exports.register = async (req, res, next) => {
+  try {
+    const { email, password, confirmPassword, firstName, lastName } = req.body;
+
+    // Validate email
+    if (!isEmail(email)) {
+      return res.status(400).json({ message: 'Email is not valid' });
+    }
+
+    const userExist = await User.findOne({ where: { email } });
+
+    // Check if the user with this email exist
+    if (userExist) {
+      return res.status(400).json({ message: 'Email has already been used' });
+    }
+    // Check password length or empty
+    if (!checkPasswordLength(password)) {
+      return res
+        .status(400)
+        .json({ message: 'Password must be atleast 6 characters' });
+    }
+    // Check if password match
+    if (!isPasswordMatch(password, confirmPassword)) {
+      return res
+        .status(400)
+        .json({ message: 'Password and confirm password does not matched' });
+    }
+    // Check if firstName is empty
+    if (!isValidName(firstName)) {
+      return res
+        .status(400)
+        .json({ message: 'Your firstname should not be empty' });
+    }
+    // Check if lastName is empty
+    if (!isValidName(lastName)) {
+      return res
+        .status(400)
+        .json({ message: 'Your lastname should not be empty' });
+    }
+    // Generate hashed password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const defaultUser = {
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+    };
+
+    // Create user in database
+    const user = await User.create(defaultUser);
+    req.user = user;
+
+    next();
+  } catch (err) {
+    console.log(err);
+    next(err);
   }
 };

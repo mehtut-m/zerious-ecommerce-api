@@ -24,6 +24,10 @@ module.exports = {
         type: Sequelize.DataTypes.STRING,
         unique: true,
       },
+      facebook_id: {
+        type: Sequelize.DataTypes.STRING,
+        unique: true,
+      },
       google_id: {
         type: Sequelize.DataTypes.STRING,
         unique: true,
