@@ -24,6 +24,8 @@ router.post('/register', register, generateToken);
 
 // Login Routes
 router.post('/login', login, generateToken);
-router.post('/protected', authenticate);
+
+// Test route
+router.get('/protected', authenticate);
 
 module.exports = router;

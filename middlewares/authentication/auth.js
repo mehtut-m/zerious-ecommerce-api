@@ -46,3 +46,13 @@ module.exports.generateToken = (req, res, next) => {
   }
   res.status(401).send('You must login first');
 };
+
+module.exports.authenticateAdmin = async (req, res, next) => {
+  // If user is role is not ADMIN then denied access
+  if (req.user.role !== 'ADMIN') {
+    res
+      .status(403)
+      .json({ message: 'You do not have permission to perforom the action' });
+  }
+  next();
+};
