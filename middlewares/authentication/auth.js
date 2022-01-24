@@ -49,8 +49,9 @@ module.exports.generateToken = (req, res, next) => {
 
 module.exports.authenticateAdmin = async (req, res, next) => {
   // If user is role is not ADMIN then denied access
+
   if (req.user.role !== 'ADMIN') {
-    res
+    return res
       .status(403)
       .json({ message: 'You do not have permission to perforom the action' });
   }

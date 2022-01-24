@@ -130,7 +130,9 @@ exports.login = async (req, res, next) => {
         .json({ message: 'Password must be atleast 6 characters' });
     }
     // Find user in the database
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email, googleId: null, facebookId: null },
+    });
 
     // If user is not found in database
     if (!user) {

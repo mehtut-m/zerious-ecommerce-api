@@ -2,27 +2,32 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('sub_categories', {
+    await queryInterface.createTable('products', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.DataTypes.INTEGER,
       },
-      name: {
-        type: Sequelize.DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      category_id: {
+      hobby_id: {
         allowNull: false,
         type: Sequelize.DataTypes.INTEGER,
-        references: {
-          model: {
-            tableName: 'categories',
-          },
-          key: 'id',
-        },
+      },
+      sub_categories_id: {
+        allowNull: false,
+        type: Sequelize.DataTypes.INTEGER,
+      },
+      name: {
+        allowNull: false,
+        type: Sequelize.DataTypes.STRING,
+      },
+      description: {
+        allowNull: false,
+        type: Sequelize.DataTypes.STRING,
+      },
+      price: {
+        allowNull: false,
+        type: Sequelize.DataTypes.DECIMAL(10, 2),
       },
       created_at: {
         allowNull: false,
@@ -35,8 +40,7 @@ module.exports = {
     });
   },
 
-  // when UNDO down function wii be called
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('sub_categories');
+    await queryInterface.dropTable('products');
   },
 };

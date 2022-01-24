@@ -6,6 +6,4 @@ const router = express.Router();
 
 router.get('/get-my-info', authenticate, getMyProfile);
 
-// router.get('/get-my-info', authenticate, getMyProfile);
-
 module.exports = router;

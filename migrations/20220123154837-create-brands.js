@@ -14,6 +14,14 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
+      created_at: {
+        allowNull: false,
+        type: Sequelize.DataTypes.DATE,
+      },
+      updated_at: {
+        allowNull: false,
+        type: Sequelize.DataTypes.DATE,
+      },
     });
   },
 
