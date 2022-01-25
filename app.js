@@ -12,10 +12,13 @@ const brandRoute = require('./routes/brandRoutes');
 const categoryRoute = require('./routes/categoryRoutes');
 const subCategoryRoute = require('./routes/subCategoryRoutes');
 const productRoute = require('./routes/productRoutes');
+const orderRoute = require('./routes/orderRoutes');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('static', express.static('public/'));
 
 app.use('/auth/', authRoute);
 app.use('/user/', userRoute);
@@ -23,7 +26,13 @@ app.use('/user/', userRoute);
 app.use('/brand/', brandRoute);
 app.use('/category/', categoryRoute);
 app.use('/sub-category/', subCategoryRoute);
-// app.use('/product/', productRoute);
+app.use('/product/', productRoute);
+app.use('/order/', orderRoute);
+
+app.use((err, req, res, next) => {
+  console.log(err);
+  res.status(500).json({ message: 'Internal Server Error' });
+});
 
 app.listen(process.env.PORT || 5000, () =>
   console.log(`server is runnig on port ${process.env.PORT || 5000}`)

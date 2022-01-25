@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
     { underscored: true }
   );
 
-  // Brand.associate = (models) => {};
+  Brand.associate = (models) => {
+    Brand.hasMany(models.Product, {
+      as: 'brand',
+      foreignKey: { name: 'brandId', allowNull: false },
+    });
+  };
   return Brand;
 };

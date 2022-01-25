@@ -15,10 +15,12 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   Category.associate = (models) => {
-    Category.hasMany(models.SubCategory, {
+    Category.hasMany(models.Product, {
+      as: 'category',
       foreignKey: { name: 'categoryId', allowNull: false },
     });
     Category.belongsTo(models.Hobby, {
+      as: 'hobby',
       foreignKey: { name: 'hobbyId', allowNull: false },
     });
   };

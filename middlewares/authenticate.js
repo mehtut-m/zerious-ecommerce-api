@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { verfiyToken } = require('../../services/auth/token');
-const { User } = require('../../models/index');
+const { verfiyToken } = require('../services/auth/token');
+const { User } = require('../models/index');
 
 module.exports.authenticate = async (req, res, next) => {
   // Extract token from Header

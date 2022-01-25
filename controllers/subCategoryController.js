@@ -22,7 +22,7 @@ exports.createSubCategory = async (req, res, next) => {
     // Check if name is valid
     if (!isValidName(name)) {
       // Send err to user
-      return res.status(400).json({ message: 'name is malformed' });
+      return res.status(400).json({ message: 'name is invalid' });
     }
 
     // Check if the category provided is exist

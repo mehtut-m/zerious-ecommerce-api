@@ -13,7 +13,7 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DataTypes.INTEGER,
       },
-      sub_categories_id: {
+      categories_id: {
         allowNull: false,
         type: Sequelize.DataTypes.INTEGER,
       },
@@ -22,11 +22,13 @@ module.exports = {
         type: Sequelize.DataTypes.STRING,
       },
       description: {
-        allowNull: false,
+        type: Sequelize.DataTypes.STRING,
+      },
+      product_img: {
         type: Sequelize.DataTypes.STRING,
       },
       price: {
-        allowNull: false,
+        defaultValue: 0,
         type: Sequelize.DataTypes.DECIMAL(10, 2),
       },
       created_at: {

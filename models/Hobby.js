@@ -16,8 +16,13 @@ module.exports = (sequelize, DataTypes) => {
 
   Hobby.associate = (models) => {
     Hobby.hasMany(models.Category, {
+      as: 'hobby',
       foreignKey: { name: 'hobbyId', allowNull: false },
     });
+    // Hobby.hasMany(models.Product, {
+    //   as: 'product',
+    //   foreignKey: { name: 'hobbyId', allowNull: false },
+    // });
   };
   return Hobby;
 };

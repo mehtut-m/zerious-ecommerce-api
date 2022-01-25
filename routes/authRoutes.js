@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { generateToken } = require('../middlewares/authentication/auth');
+const { generateToken } = require('../middlewares/authenticate');
 
 // Import Controllers
 const {
@@ -11,7 +11,7 @@ const {
   login,
 } = require('../controllers/authController');
 
-const { authenticate } = require('../middlewares/authentication/auth');
+const { authenticate } = require('../middlewares/authenticate');
 
 // Google Login Routes
 router.post('/google', googleLogin, generateToken);

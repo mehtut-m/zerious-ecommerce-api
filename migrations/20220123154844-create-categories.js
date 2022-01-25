@@ -9,10 +9,6 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.DataTypes.INTEGER,
       },
-      hobbyId: {
-        allowNull: false,
-        type: Sequelize.DataTypes.INTEGER,
-      },
       name: {
         type: Sequelize.DataTypes.STRING,
         allowNull: false,

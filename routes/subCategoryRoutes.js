@@ -8,7 +8,7 @@ const {
 const {
   authenticate,
   authenticateAdmin,
-} = require('../middlewares/authentication/auth');
+} = require('../middlewares/authenticate');
 
 const router = express.Router();
 

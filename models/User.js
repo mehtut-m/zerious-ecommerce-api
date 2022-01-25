@@ -7,6 +7,9 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
         primaryKey: true,
+        validate: {
+          isUUID: 4,
+        },
       },
       firstName: {
         type: DataTypes.STRING,
@@ -58,6 +61,11 @@ module.exports = (sequelize, DataTypes) => {
     { underscored: true }
   );
 
-  // User.associate = (models) => {};
+  User.associate = (models) => {
+    User.hasMany(models.Order, {
+      as: 'order',
+      foreignKey: { name: 'userId', allowNull: false },
+    });
+  };
   return User;
 };
