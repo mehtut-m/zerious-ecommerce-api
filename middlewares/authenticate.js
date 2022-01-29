@@ -4,7 +4,14 @@ const { User } = require('../models/index');
 
 module.exports.authenticate = async (req, res, next) => {
   // Extract token from Header
-  const bearerToken = req.header('authorization').split(' ')[1];
+  const auth = req.header('authorization');
+
+  if (typeof auth !== 'string' || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({
+      message: 'Authentication failed',
+    });
+  }
+  const bearerToken = auth.split(' ')[1];
 
   if (!bearerToken) {
     return res
@@ -41,7 +48,7 @@ module.exports.generateToken = (req, res, next) => {
     });
 
     return res
-      .status(201)
+      .status(200)
       .json({ token, user: { id, firstName, lastName, email, profileImg } });
   }
   res.status(401).send('You must login first');
@@ -49,7 +56,6 @@ module.exports.generateToken = (req, res, next) => {
 
 module.exports.authenticateAdmin = async (req, res, next) => {
   // If user is role is not ADMIN then denied access
-
   if (req.user.role !== 'ADMIN') {
     return res
       .status(403)

@@ -1,65 +1,203 @@
-const { Order, OrderItem } = require('../models');
+const { Order, OrderItem, Product, sequelize } = require('../models');
 const { findProduct } = require('../services/product');
 
+const createOrder = async (userId) => {
+  return await Order.create({ userId });
+};
+const getCartItemById = async (orderItemId, userId) => {
+  return await OrderItem.findOne({
+    where: { id: orderItemId },
+    include: {
+      model: Order,
+      as: 'order',
+      where: { userId, status: 'PENDING' },
+    },
+  });
+};
+
+const getCartItems = async (orderId, userId) => {
+  return await OrderItem.findAll({
+    where: { orderId },
+    include: {
+      model: Order,
+      as: 'order',
+      where: { userId, status: 'PENDING' },
+    },
+  });
+};
+
+const clearCart = async (orderId, userId) => {};
+
+const deleteCartItem = async (orderId, userId) => {
+  const cartItem = await getCartItemById(orderId, userId);
+  if (cartItem) {
+    await cartItem.destroy();
+    return true;
+  }
+  return false;
+};
+
 const getUserOrder = async (userId) => {
-  const order = await Order.findOrCreate({
+  const order = await Order.findOne({
     where: { userId: userId },
     include: [
       {
         model: OrderItem,
         as: 'orderItem',
         attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: {
+          model: Product,
+          as: 'product',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
       },
     ],
   });
   return order;
 };
 
-exports.addItemToCart = async (req, res, next) => {
+const getUserOrderItems = async (orderId) => {
+  return await Order.findAll({
+    where: { id: orderId },
+    include: {
+      model: OrderItem,
+      as: 'orderItem',
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+      include: {
+        model: Product,
+        as: 'product',
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+      },
+    },
+  });
+};
+
+// Export function
+
+exports.getCart = async (req, res, next) => {
+  const { orderId } = req.params;
+  const cart = await getUserOrderItems(orderId);
+  res.status(200).json({ cart });
+};
+
+exports.updateCart = async (req, res, next) => {
   //
   try {
     const user = req.user;
-    const { productId, amount } = req.body;
-
+    const { productId } = req.body;
+    let { amount } = req.body;
     //Check if a product with the id does exist
     const product = await findProduct(productId);
     if (!product) {
-      res.json({ message: 'productId is invalid' });
+      return res.status(400).json({ message: 'productId is invalid' });
     }
 
-    //Find pending order or Create new order if user does not have has a pending order
-    const [order] = await getUserOrder(user.id);
+    if (product.quantity < amount) {
+      amount = product.quantity;
+    }
 
-    // Check if this product is already in cart
-    const findIndexItem = order.orderItem.findIndex(
-      (el) => el.productId === productId
-    );
+    //Find pending order
+    let order = await getUserOrder(user.id);
+    // Create new order if user does not have has a pending order
+    if (!order) {
+      order = await createOrder(user.id);
+    }
+    let orderItem = await OrderItem.findOne({
+      where: { orderId: order.id, productId },
+      include: {
+        model: Product,
+        as: 'product',
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+      },
+    });
 
-    let orderItem;
-    // if product is not included created a new order item
-    if (order.orderItem === undefined || findIndexItem === -1) {
-      orderItem = await OrderItem.create({
+    // if amount user sent is 0 delete the item
+    if (!orderItem && amount === 0) {
+      return res.status(204).json({});
+    } else if (orderItem && amount === 0) {
+      deleteCartItem(orderItem.id, user.id);
+      return res.status(204).json({});
+    }
+    // if product is already included update the order item
+    else if (orderItem) {
+      orderItem.amount = amount;
+      orderItem.save();
+    } else {
+      // if product is not included created a new order item
+      let tempItem = await OrderItem.create({
         orderId: order.id,
-        productId,
         amount,
+        productId,
         price: product.price,
       });
-
-      return res.json({ message: orderItem });
+      console.log(tempItem);
+      orderItem = await OrderItem.findByPk(tempItem.id, {
+        include: {
+          model: Product,
+          as: 'product',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+      });
     }
-
-    // if product is already included update a new
-
-    order.orderItem[findIndexItem].amount = amount;
-    orderItem = await order.orderItem[findIndexItem].save();
-    res.json({ orderItem });
-    // orderItem = await OrderItem.create({
-    //     orderId: order.id,
-    //     productId,
-    //     amount,
-    //     price: product.price,
-    //   });
+    return res.json({ orderItem });
   } catch (err) {
     next(err);
   }
+};
+
+exports.removeCartItemById = async (req, res, next) => {
+  const { orderItemId } = req.params;
+  const { id: userId } = req.user;
+  try {
+    await deleteCartItem(orderItemId, userId);
+    res.status(204).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.clearCart = async (req, res, next) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { orderId } = req.params;
+    const { id: userId } = req.user;
+    // Check if order item is send be client
+    if (!orderId) {
+      return res.status(400).json({ message: 'orderId is required' });
+    }
+    const order = await Order.findOne({ where: { userId, status: 'PENDING' } });
+    console.log(order);
+    if (!order) {
+      return res.status(400).json({ message: 'orderId is not found' });
+    }
+
+    await OrderItem.destroy({ where: { orderId } }, { transaction });
+    await Order.destroy({ where: { id: orderId } }, { transaction });
+    await transaction.commit();
+
+    res.status(204).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getMyOrder = async (req, res, next) => {
+  const { id: userId } = req.user;
+  const [order] = await Order.findOrCreate({
+    where: { userId: userId, status: 'PENDING' },
+    include: [
+      {
+        model: OrderItem,
+        as: 'orderItem',
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: {
+          model: Product,
+          as: 'product',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+      },
+    ],
+  });
+
+  res.json({ order });
 };

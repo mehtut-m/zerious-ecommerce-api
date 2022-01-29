@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
 
   OrderItem.associate = (models) => {
     OrderItem.belongsTo(models.Order, {
-      as: 'orderItem',
+      as: 'order',
       foreignKey: { name: 'orderId', allowNull: false },
     });
 

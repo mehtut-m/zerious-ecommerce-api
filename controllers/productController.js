@@ -1,11 +1,16 @@
 const { isValidName } = require('../services/auth/inputValidator');
 const { Product, Brand, Category, Hobby } = require('../models');
+const { Op } = require('sequelize');
 
 const validatePrice = (price) => !isNaN(price) && price >= 0;
 
-exports.getAllProduct = async (req, res, next) => {
+exports.searchProduct = async (req, res, next) => {
   try {
-    const product = await Product.findAll({
+    const { searchText } = req.query;
+    if (searchText.trim() === '') {
+      return res.status(400).json({ message: 'please enter a search text' });
+    }
+    const products = await Product.findAll({
       include: [
         {
           model: Brand,
@@ -23,11 +28,75 @@ exports.getAllProduct = async (req, res, next) => {
           },
         },
       ],
+      where: {
+        [Op.or]: {
+          name: { [Op.substring]: searchText },
+          '$category.name$': { [Op.substring]: searchText },
+          '$brand.name$': { [Op.substring]: searchText },
+        },
+      },
     });
-    res.json(product);
+    //
+    res.json({ products });
   } catch (err) {
     next(err);
   }
+};
+
+exports.getAllProduct = async (req, res, next) => {
+  try {
+    const products = await Product.findAll({
+      include: [
+        {
+          model: Brand,
+          as: 'brand',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+        {
+          model: Category,
+          as: 'category',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+          include: {
+            as: 'hobby',
+            model: Hobby,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+        },
+      ],
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+    });
+    res.json({ products });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getProductById = async (req, res, next) => {
+  const { id } = req.params;
+
+  const product = await Product.findOne({
+    where: { id },
+    include: [
+      {
+        model: Brand,
+        as: 'brand',
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+      },
+      {
+        model: Category,
+        as: 'category',
+        attributes: { exclude: ['createdAt', 'updatedAt', 'hobbyId'] },
+        include: {
+          as: 'hobby',
+          model: Hobby,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+      },
+    ],
+    attributes: { exclude: ['createdAt', 'updatedAt'] },
+  });
+
+  res.json({ product });
 };
 
 exports.getProductByHobby = async (req, res, next) => {

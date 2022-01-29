@@ -14,10 +14,10 @@ const {
 const { authenticate } = require('../middlewares/authenticate');
 
 // Google Login Routes
-router.post('/google', googleLogin, generateToken);
+router.post('/login/google', googleLogin, generateToken);
 
 // Facebook Login Routes
-router.post('/fb', facebookLogin, generateToken);
+router.post('/login/fb', facebookLogin, generateToken);
 
 // Register Routes
 router.post('/register', register, generateToken);
