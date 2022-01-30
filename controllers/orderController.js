@@ -81,7 +81,6 @@ exports.getCart = async (req, res, next) => {
 };
 
 exports.updateCart = async (req, res, next) => {
-  //
   try {
     const user = req.user;
     const { productId } = req.body;
@@ -124,14 +123,14 @@ exports.updateCart = async (req, res, next) => {
       orderItem.save();
     } else {
       // if product is not included created a new order item
-      let tempItem = await OrderItem.create({
+      let newItem = await OrderItem.create({
         orderId: order.id,
         amount,
         productId,
         price: product.price,
       });
-      console.log(tempItem);
-      orderItem = await OrderItem.findByPk(tempItem.id, {
+
+      orderItem = await OrderItem.findByPk(newItem.id, {
         include: {
           model: Product,
           as: 'product',
