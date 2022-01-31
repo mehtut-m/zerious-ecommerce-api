@@ -49,6 +49,14 @@ module.exports = (sequelize, DataTypes) => {
       address: {
         type: DataTypes.STRING,
       },
+      points: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        validate: {
+          min: 0,
+        },
+      },
       role: {
         type: DataTypes.ENUM('USER', 'ADMIN'),
         allowNull: false,

@@ -39,7 +39,7 @@ const deleteCartItem = async (orderId, userId) => {
 
 const getUserOrder = async (userId) => {
   const order = await Order.findOne({
-    where: { userId: userId },
+    where: { userId: userId, status: 'PENDING' },
     include: [
       {
         model: OrderItem,
@@ -97,6 +97,7 @@ exports.updateCart = async (req, res, next) => {
 
     //Find pending order
     let order = await getUserOrder(user.id);
+
     // Create new order if user does not have has a pending order
     if (!order) {
       order = await createOrder(user.id);
@@ -109,7 +110,8 @@ exports.updateCart = async (req, res, next) => {
         attributes: { exclude: ['createdAt', 'updatedAt'] },
       },
     });
-
+    console.log(order.id);
+    console.log(orderItem);
     // if amount user sent is 0 delete the item
     if (!orderItem && amount === 0) {
       return res.status(204).json({});
@@ -138,6 +140,8 @@ exports.updateCart = async (req, res, next) => {
         },
       });
     }
+
+    console.log(orderItem);
     return res.json({ orderItem });
   } catch (err) {
     next(err);
@@ -200,3 +204,5 @@ exports.getMyOrder = async (req, res, next) => {
 
   res.json({ order });
 };
+
+exports.getUserOrder = getUserOrder;

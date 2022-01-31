@@ -13,6 +13,7 @@ const categoryRoute = require('./routes/categoryRoutes');
 const subCategoryRoute = require('./routes/subCategoryRoutes');
 const productRoute = require('./routes/productRoutes');
 const orderRoute = require('./routes/orderRoutes');
+const checkOutRoute = require('./routes/checkOutRoutes');
 
 app.use(cors());
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use('/category/', categoryRoute);
 app.use('/sub-category/', subCategoryRoute);
 app.use('/product/', productRoute);
 app.use('/order/', orderRoute);
+app.use('/checkout', checkOutRoute);
 
 app.use((err, req, res, next) => {
   console.log(err);
