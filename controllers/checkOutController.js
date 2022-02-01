@@ -64,9 +64,13 @@ exports.checkOutCreditCard = async (req, res, next) => {
       customer: customer.id,
     });
     // console.log('Charge ', charge);
-
+    console.log(charge);
     // If payment is not success then send the response
     if (charge.status !== 'successful') {
+      console.log({
+        amount: charge.amount,
+        status: charge.status,
+      });
       return res.status(400).json({ message: 'transaction failed' });
     }
 
@@ -81,11 +85,6 @@ exports.checkOutCreditCard = async (req, res, next) => {
       order,
     });
     // ------------- Consider adding payment info table --------------
-
-    // res.json({
-    //   amount: charge.amount,
-    //   status: charge.status,
-    // });
   } catch (err) {
     console.log(err);
     next(err);

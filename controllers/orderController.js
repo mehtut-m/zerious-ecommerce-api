@@ -1,5 +1,6 @@
 const { Order, OrderItem, Product, sequelize } = require('../models');
 const { findProduct } = require('../services/product');
+const { Op } = require('sequelize');
 
 const createOrder = async (userId) => {
   return await Order.create({ userId });
@@ -74,11 +75,11 @@ const getUserOrderItems = async (orderId) => {
 
 // Export function
 
-exports.getCart = async (req, res, next) => {
-  const { orderId } = req.params;
-  const cart = await getUserOrderItems(orderId);
-  res.status(200).json({ cart });
-};
+// exports.getCart = async (req, res, next) => {
+//   const { orderId } = req.params;
+//   const cart = await getUserOrderItems(orderId);
+//   res.status(200).json({ cart });
+// };
 
 exports.updateCart = async (req, res, next) => {
   try {
@@ -184,10 +185,54 @@ exports.clearCart = async (req, res, next) => {
   }
 };
 
-exports.getMyOrder = async (req, res, next) => {
+exports.getCart = async (req, res, next) => {
   const { id: userId } = req.user;
   const [order] = await Order.findOrCreate({
     where: { userId: userId, status: 'PENDING' },
+    include: [
+      {
+        model: OrderItem,
+        as: 'orderItem',
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: {
+          model: Product,
+          as: 'product',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+      },
+    ],
+  });
+
+  res.json({ order });
+};
+
+exports.getMyOrder = async (req, res, next) => {
+  const { id: userId } = req.user;
+  console.log(userId);
+  const order = await Order.findAll({
+    where: { userId: userId, status: { [Op.ne]: 'PENDING' } },
+    include: [
+      {
+        model: OrderItem,
+        as: 'orderItem',
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: {
+          model: Product,
+          as: 'product',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+      },
+    ],
+  });
+
+  res.json({ order });
+};
+exports.getMyOrderById = async (req, res, next) => {
+  const { id: userId } = req.user;
+  const { id } = req.params;
+
+  const order = await Order.findOne({
+    where: { id, userId: userId, status: { [Op.ne]: 'PENDING' } },
     include: [
       {
         model: OrderItem,
