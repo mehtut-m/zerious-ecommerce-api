@@ -17,10 +17,10 @@ const { authenticate } = require('../middlewares/authenticate');
 router.get('/cart', authenticate, getCart);
 // router.get('/:orderId', authenticate, getCart);
 router.post('/', authenticate, updateCart);
-// delete entire order
-router.delete('/cart/:orderId', authenticate, clearCart);
 // delete only cart-item
 router.delete('/cart/item/:orderItemId', authenticate, removeCartItemById);
+// delete entire order
+router.delete('/cart/:orderId', authenticate, clearCart);
 
 // Get All user order
 router.get('/', authenticate, getMyOrder);

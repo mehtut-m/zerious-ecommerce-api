@@ -2,6 +2,9 @@ const { Order, OrderItem, Product, sequelize } = require('../models');
 const { findProduct } = require('../services/product');
 const { Op } = require('sequelize');
 
+const subTotal = (order) =>
+  order.orderItem.reduce((acc, curr) => curr.price * curr.amount + acc, 0);
+
 const createOrder = async (userId) => {
   return await Order.create({ userId });
 };
@@ -208,9 +211,10 @@ exports.getCart = async (req, res, next) => {
 
 exports.getMyOrder = async (req, res, next) => {
   const { id: userId } = req.user;
-  console.log(userId);
+
   const order = await Order.findAll({
     where: { userId: userId, status: { [Op.ne]: 'PENDING' } },
+    order: [['id', 'desc']],
     include: [
       {
         model: OrderItem,
@@ -230,9 +234,14 @@ exports.getMyOrder = async (req, res, next) => {
 exports.getMyOrderById = async (req, res, next) => {
   const { id: userId } = req.user;
   const { id } = req.params;
-
+  console.log('user id-->', userId);
+  console.log('Id-->', id);
   const order = await Order.findOne({
-    where: { id, userId: userId, status: { [Op.ne]: 'PENDING' } },
+    where: {
+      id,
+      userId: userId,
+      status: { [Op.ne]: 'PENDING' },
+    },
     include: [
       {
         model: OrderItem,
@@ -246,8 +255,15 @@ exports.getMyOrderById = async (req, res, next) => {
       },
     ],
   });
+  if (!order) {
+    return res.json({ order: null });
+  }
+  const subTotal = order.orderItem.reduce(
+    (acc, curr) => curr.price * curr.amount + acc,
+    0
+  );
 
-  res.json({ order });
+  res.json({ order, subTotal });
 };
 
 exports.getUserOrder = getUserOrder;

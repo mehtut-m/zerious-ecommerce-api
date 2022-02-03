@@ -16,6 +16,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       discount: {
         type: DataTypes.STRING,
+        defaultValue: 0,
       },
       address: {
         type: DataTypes.STRING,

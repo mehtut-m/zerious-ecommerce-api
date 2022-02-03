@@ -46,9 +46,6 @@ module.exports = (sequelize, DataTypes) => {
       profileImg: {
         type: DataTypes.STRING,
       },
-      address: {
-        type: DataTypes.STRING,
-      },
       points: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -72,6 +69,10 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = (models) => {
     User.hasMany(models.Order, {
       as: 'order',
+      foreignKey: { name: 'userId', allowNull: false },
+    });
+    User.hasMany(models.Address, {
+      as: 'address',
       foreignKey: { name: 'userId', allowNull: false },
     });
   };

@@ -1,7 +1,7 @@
 const { sequelize } = require('../models');
 const { getUserOrder } = require('./orderController');
 
-const updateOrder = async (id) => {
+const updateOrder = async (id, address) => {
   const transaction = await sequelize.transaction();
   try {
     // If payment is success then update
@@ -24,7 +24,7 @@ const updateOrder = async (id) => {
     });
     // Update status of order
     order.status = 'PAID';
-
+    order.address = address;
     await order.save({ transaction });
     await transaction.commit();
     return order;
@@ -39,17 +39,10 @@ const omise = require('omise')({
   secretKey: process.env.OMISE_SECRET_KEY,
 });
 
-const createCharge = async () => {
-  try {
-  } catch (error) {}
-
-  console.log('Charge ', charge);
-};
-
 exports.checkOutCreditCard = async (req, res, next) => {
   // Get Info from user
-  const { email, name, amount, token } = req.body;
-
+  const { email, name, amount, token, address } = req.body;
+  console.log(req.body);
   try {
     // Create customer for Omise
     const customer = await omise.customers.create({
@@ -74,7 +67,7 @@ exports.checkOutCreditCard = async (req, res, next) => {
       return res.status(400).json({ message: 'transaction failed' });
     }
 
-    const order = await updateOrder(req.user.id);
+    const order = await updateOrder(req.user.id, address);
 
     // If updateOrder failed send response
     if (!order) {
