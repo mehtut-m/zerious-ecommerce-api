@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { getAddress } = require('../controllers/addressController');
 const { verfiyToken } = require('../services/auth/token');
 const { User } = require('../models/index');
 
@@ -21,15 +22,17 @@ module.exports.authenticate = async (req, res, next) => {
   try {
     // Extract payload from token if token is verified
     const payload = jwt.verify(bearerToken, process.env.JWT_SECRET);
-    const user = await User.findByPk(payload.id);
+    const user = await User.findByPk(payload.id, {
+      attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
+    });
     if (!user) {
       return res.status(401).json({
         message: 'Token is invalid',
       });
     }
-
     // Set user info in request header
-    req.user = user;
+    const formattedResult = JSON.stringify(user);
+    req.user = JSON.parse(formattedResult);
   } catch (err) {
     return res.status(401).json({
       message: 'Token is invalid',
@@ -39,17 +42,18 @@ module.exports.authenticate = async (req, res, next) => {
   next();
 };
 
-module.exports.generateToken = (req, res, next) => {
+module.exports.generateToken = async (req, res, next) => {
   if (req.user) {
     const { id, email, firstName, lastName, profileImg } = req.user;
-
+    const address = await getAddress(id);
     const token = jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: '30d',
     });
 
-    return res
-      .status(200)
-      .json({ token, user: { id, firstName, lastName, email, profileImg } });
+    return res.status(200).json({
+      token,
+      user: { id, firstName, lastName, email, profileImg, address },
+    });
   }
   res.status(401).send('You must login first');
 };
