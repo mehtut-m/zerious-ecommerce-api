@@ -86,7 +86,6 @@ exports.facebookLogin = async (req, res, next) => {
         .status(400)
         .json({ message: 'user not found or error has occurred' });
     }
-
     //Get user info from access token
     const {
       data: {

@@ -1,6 +1,14 @@
 const { isValidName } = require('../services/auth/inputValidator');
-const { Product, Brand, Category, Hobby } = require('../models');
-const { Op } = require('sequelize');
+const {
+  Product,
+  ProductImage,
+  Brand,
+  Category,
+  Hobby,
+  Order,
+  OrderItem,
+} = require('../models');
+const { Op, fn, col } = require('sequelize');
 
 const validatePrice = (price) => !isNaN(price) && price >= 0;
 
@@ -62,11 +70,17 @@ exports.getAllProduct = async (req, res, next) => {
             attributes: { exclude: ['createdAt', 'updatedAt'] },
           },
         },
+        {
+          model: ProductImage,
+          as: 'productImg',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
       ],
       attributes: { exclude: ['createdAt', 'updatedAt'] },
     });
     res.json({ products });
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };
@@ -80,6 +94,11 @@ exports.getProductById = async (req, res, next) => {
       {
         model: Brand,
         as: 'brand',
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+      },
+      {
+        model: ProductImage,
+        as: 'productImg',
         attributes: { exclude: ['createdAt', 'updatedAt'] },
       },
       {
@@ -192,4 +211,52 @@ exports.createProduct = async (req, res, next) => {
 
   // Response to client with created product
   res.status(201).json(product);
+};
+
+exports.trendingProduct = async (req, res, next) => {
+  try {
+    const productIds = await Product.findAll({
+      // attributes: ['id', 'name', 'price', 'description'],
+      attributes: ['id'],
+      order: [[fn('SUM', col('orderItem.amount')), 'DESC']],
+      group: ['product.id'],
+      include: [
+        {
+          model: OrderItem,
+          as: 'orderItem',
+          attributes: [],
+          include: {
+            model: Order,
+            as: 'order',
+            where: { [Op.not]: [{ status: 'PENDING' }] },
+            attributes: [],
+          },
+        },
+      ],
+    });
+    const reducedIds = productIds.reduce((prev, curr) => {
+      prev.push(curr.id);
+      return prev;
+    }, []);
+
+    const productWithPic = await Product.findAll({
+      where: { id: reducedIds },
+      include: [
+        {
+          model: ProductImage,
+          as: 'productImg',
+        },
+      ],
+    });
+
+    const trendingProduct = productIds.map((item) => {
+      const productItem = productWithPic.find((el) => el.id === item.id);
+      productItem.productImg.sort((a, b) => a.id - b.id);
+      return productItem;
+    });
+
+    res.json({ trendingProduct });
+  } catch (err) {
+    console.log(err);
+  }
 };

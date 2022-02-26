@@ -1,4 +1,10 @@
-const { Order, OrderItem, Product, sequelize } = require('../models');
+const {
+  Order,
+  OrderItem,
+  Product,
+  ProductImage,
+  sequelize,
+} = require('../models');
 const { findProduct } = require('../services/product');
 const { Op } = require('sequelize');
 
@@ -112,10 +118,13 @@ exports.updateCart = async (req, res, next) => {
         model: Product,
         as: 'product',
         attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: {
+          model: ProductImage,
+          as: 'productImg',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
       },
     });
-    console.log(order.id);
-    console.log(orderItem);
     // if amount user sent is 0 delete the item
     if (!orderItem && amount === 0) {
       return res.status(204).json({});
@@ -141,6 +150,11 @@ exports.updateCart = async (req, res, next) => {
           model: Product,
           as: 'product',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
+          include: {
+            model: ProductImage,
+            as: 'productImg',
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
         },
       });
     }
@@ -201,6 +215,11 @@ exports.getCart = async (req, res, next) => {
           model: Product,
           as: 'product',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
+          include: {
+            model: ProductImage,
+            as: 'productImg',
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
         },
       },
     ],
@@ -224,6 +243,11 @@ exports.getMyOrder = async (req, res, next) => {
           model: Product,
           as: 'product',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
+          include: {
+            model: ProductImage,
+            as: 'productImg',
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
         },
       },
     ],
@@ -251,6 +275,11 @@ exports.getMyOrderById = async (req, res, next) => {
           model: Product,
           as: 'product',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
+          include: {
+            model: ProductImage,
+            as: 'productImg',
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
         },
       },
     ],

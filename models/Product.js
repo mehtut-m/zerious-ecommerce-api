@@ -16,11 +16,11 @@ module.exports = (sequelize, DataTypes) => {
           notEmpty: true,
         },
       },
-      productImg: {
-        type: DataTypes.STRING,
-      },
+      // productImg: {
+      //   type: DataTypes.STRING,
+      // },
       description: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         validate: {
           notEmpty: true,
         },
@@ -46,7 +46,11 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: { name: 'brandId', allowNull: false },
     });
     Product.hasMany(models.OrderItem, {
-      as: 'product',
+      as: 'orderItem',
+      foreignKey: { name: 'productId', allowNull: false },
+    });
+    Product.hasMany(models.ProductImage, {
+      as: 'productImg',
       foreignKey: { name: 'productId', allowNull: false },
     });
   };

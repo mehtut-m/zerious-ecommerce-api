@@ -31,8 +31,18 @@ module.exports.authenticate = async (req, res, next) => {
       });
     }
     // Set user info in request header
+    const accountType =
+      user.googleId === null && user.facebookId === null
+        ? 'Zerious'
+        : user.facebookId !== null
+        ? 'Facebook'
+        : 'Google';
+
     const formattedResult = JSON.stringify(user);
-    req.user = JSON.parse(formattedResult);
+    const parsedUser = JSON.parse(formattedResult);
+
+    req.user = { ...parsedUser, accountType };
+    // req.user = user;
   } catch (err) {
     return res.status(401).json({
       message: 'Token is invalid',
@@ -44,7 +54,15 @@ module.exports.authenticate = async (req, res, next) => {
 
 module.exports.generateToken = async (req, res, next) => {
   if (req.user) {
-    const { id, email, firstName, lastName, profileImg } = req.user;
+    const { id, email, firstName, lastName, profileImg, googleId, facebookId } =
+      req.user;
+    const accountType =
+      googleId === null && facebookId === null
+        ? 'Zerious'
+        : facebookId !== null
+        ? 'Facebook'
+        : 'Google';
+
     const address = await getAddress(id);
     const token = jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: '30d',
@@ -52,7 +70,15 @@ module.exports.generateToken = async (req, res, next) => {
 
     return res.status(200).json({
       token,
-      user: { id, firstName, lastName, email, profileImg, address },
+      user: {
+        id,
+        firstName,
+        lastName,
+        email,
+        profileImg,
+        address,
+        accountType,
+      },
     });
   }
   res.status(401).send('You must login first');
