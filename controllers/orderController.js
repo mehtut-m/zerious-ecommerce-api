@@ -10,28 +10,33 @@ const { getAllComplete, getItemStatus } = require('../services/emsTracking');
 const { Op } = require('sequelize');
 
 const updateOrderStatus = async () => {
-  const token =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJzZWN1cmUtYXBpIiwiYXVkIjoic2VjdXJlLWFwcCIsInN1YiI6IkF1dGhvcml6YXRpb24iLCJleHAiOjE2NDYwNjYwMjYsInJvbCI6WyJST0xFX1VTRVIiXSwiZCpzaWciOnsicCI6InpXNzB4IiwicyI6bnVsbCwidSI6ImMyYWIyZWRkODAwZDU1M2Y0OWNiNzQ4NmU4N2E5OGU0IiwiZiI6InhzeiM5In19.auKbkiFc9TVwjrD26menf4uN2Vp_RIRwbfbQ3ULFD7VPJ6PhWiW_fePFS2GxrXwUmj3Wd6dX-dI5-IBlt2J22g';
-  const order = await Order.findAll({ where: { status: 'SHIPPED' } });
-  const tracking = {};
-  // loop over array to get tracking no.
-  order.forEach((el) => {
-    tracking[el.tracking] = el.id;
-  });
+  try {
+    const token =
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJzZWN1cmUtYXBpIiwiYXVkIjoic2VjdXJlLWFwcCIsInN1YiI6IkF1dGhvcml6YXRpb24iLCJleHAiOjE2NDYwNjYwMjYsInJvbCI6WyJST0xFX1VTRVIiXSwiZCpzaWciOnsicCI6InpXNzB4IiwicyI6bnVsbCwidSI6ImMyYWIyZWRkODAwZDU1M2Y0OWNiNzQ4NmU4N2E5OGU0IiwiZiI6InhzeiM5In19.auKbkiFc9TVwjrD26menf4uN2Vp_RIRwbfbQ3ULFD7VPJ6PhWiW_fePFS2GxrXwUmj3Wd6dX-dI5-IBlt2J22g';
+    const order = await Order.findAll({ where: { status: 'SHIPPED' } });
+    const tracking = {};
+    // loop over array to get tracking no.
+    order.forEach((el) => {
+      tracking[el.tracking] = el.id;
+    });
 
-  // sent request to EMS API
-  if (order.length <= 0) {
-    return;
+    // sent request to EMS API
+    if (order.length <= 0) {
+      return;
+    }
+    const response = await getAllComplete(Object.keys(tracking), token);
+    const completedTracking = Object.keys(response);
+
+    await Order.update(
+      { status: 'COMPLETED' },
+      { where: { tracking: completedTracking } }
+    );
+  } catch (err) {
+    console.log('updateOrderStatus ----------------->', err);
   }
-  const response = await getAllComplete(Object.keys(tracking), token);
-  const completedTracking = Object.keys(response);
-  await Order.update(
-    { status: 'COMPLETED' },
-    { where: { tracking: completedTracking } }
-  );
 };
 
-updateOrderStatus();
+// updateOrderStatus();
 
 const subTotal = (order) =>
   order.orderItem.reduce((acc, curr) => curr.price * curr.amount + acc, 0);
@@ -280,49 +285,61 @@ exports.getMyOrder = async (req, res, next) => {
 
   res.json({ order });
 };
+
+exports.getTrackingInfo = async (req, res, next) => {
+  try {
+    const { trackingNo } = req.params;
+
+    const token =
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJzZWN1cmUtYXBpIiwiYXVkIjoic2VjdXJlLWFwcCIsInN1YiI6IkF1dGhvcml6YXRpb24iLCJleHAiOjE2NDg3NDc5NTEsInJvbCI6WyJST0xFX1VTRVIiXSwiZCpzaWciOnsicCI6InpXNzB4IiwicyI6bnVsbCwidSI6ImMyYWIyZWRkODAwZDU1M2Y0OWNiNzQ4NmU4N2E5OGU0IiwiZiI6InhzeiM5In19.dXPLsSGzT6buv2ATyhRVU6bQ5IZFKuM-XenxOLiv6JcC0wBBC0cMG_SS836mER5mdIJ5sEfYSiea6awsmBNB5A';
+
+    const result = await getItemStatus(trackingNo, token);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 exports.getMyOrderById = async (req, res, next) => {
-  const token =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJzZWN1cmUtYXBpIiwiYXVkIjoic2VjdXJlLWFwcCIsInN1YiI6IkF1dGhvcml6YXRpb24iLCJleHAiOjE2NDYwNjYwMjYsInJvbCI6WyJST0xFX1VTRVIiXSwiZCpzaWciOnsicCI6InpXNzB4IiwicyI6bnVsbCwidSI6ImMyYWIyZWRkODAwZDU1M2Y0OWNiNzQ4NmU4N2E5OGU0IiwiZiI6InhzeiM5In19.auKbkiFc9TVwjrD26menf4uN2Vp_RIRwbfbQ3ULFD7VPJ6PhWiW_fePFS2GxrXwUmj3Wd6dX-dI5-IBlt2J22g';
-  const { id: userId } = req.user;
-  const { id } = req.params;
-  const order = await Order.findOne({
-    where: {
-      id,
-      userId: userId,
-      status: { [Op.ne]: 'PENDING' },
-    },
-    include: [
-      {
-        model: OrderItem,
-        as: 'orderItem',
-        attributes: { exclude: ['createdAt', 'updatedAt'] },
-        include: {
-          model: Product,
-          as: 'product',
+  try {
+    const { id: userId } = req.user;
+    const { id } = req.params;
+    const order = await Order.findOne({
+      where: {
+        id,
+        userId: userId,
+        status: { [Op.ne]: 'PENDING' },
+      },
+      include: [
+        {
+          model: OrderItem,
+          as: 'orderItem',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
           include: {
-            model: ProductImage,
-            as: 'productImg',
+            model: Product,
+            as: 'product',
             attributes: { exclude: ['createdAt', 'updatedAt'] },
+            include: {
+              model: ProductImage,
+              as: 'productImg',
+              attributes: { exclude: ['createdAt', 'updatedAt'] },
+            },
           },
         },
-      },
-    ],
-  });
-  if (!order) {
-    return res.json({ order: null });
-  }
-  const subTotal = order.orderItem.reduce(
-    (acc, curr) => curr.price * curr.amount + acc,
-    0
-  );
+      ],
+    });
+    if (!order) {
+      return res.json({ order: null });
+    }
+    const subTotal = order.orderItem.reduce(
+      (acc, curr) => curr.price * curr.amount + acc,
+      0
+    );
 
-  let trackingInfo = null;
-  if (order.tracking) {
-    trackingInfo = await getItemStatus(order.tracking, token);
+    res.json({ order, subTotal });
+  } catch (err) {
+    console.log(err);
   }
-  console.log('--------------->', trackingInfo);
-  res.json({ order, subTotal, trackingInfo: trackingInfo });
 };
 
 exports.getUserOrder = getUserOrder;

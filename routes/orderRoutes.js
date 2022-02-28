@@ -9,6 +9,7 @@ const {
   removeCartItemById,
   getMyOrder,
   getMyOrderById,
+  getTrackingInfo,
 } = require('../controllers/orderController');
 
 const { authenticate } = require('../middlewares/authenticate');
@@ -22,6 +23,7 @@ router.delete('/cart/item/:orderItemId', authenticate, removeCartItemById);
 // delete entire order
 router.delete('/cart/:orderId', authenticate, clearCart);
 
+router.get('/tracking/:trackingNo', authenticate, getTrackingInfo);
 // Get All user order
 router.get('/', authenticate, getMyOrder);
 router.get('/:id', authenticate, getMyOrderById);
