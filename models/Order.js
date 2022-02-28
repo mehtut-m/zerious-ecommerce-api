@@ -21,6 +21,9 @@ module.exports = (sequelize, DataTypes) => {
       address: {
         type: DataTypes.STRING,
       },
+      tracking: {
+        type: DataTypes.STRING,
+      },
     },
     { underscored: true }
   );

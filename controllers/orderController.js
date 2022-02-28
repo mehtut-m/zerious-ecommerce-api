@@ -6,7 +6,32 @@ const {
   sequelize,
 } = require('../models');
 const { findProduct } = require('../services/product');
+const { getAllComplete, getItemStatus } = require('../services/emsTracking');
 const { Op } = require('sequelize');
+
+const updateOrderStatus = async () => {
+  const token =
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJzZWN1cmUtYXBpIiwiYXVkIjoic2VjdXJlLWFwcCIsInN1YiI6IkF1dGhvcml6YXRpb24iLCJleHAiOjE2NDYwNjYwMjYsInJvbCI6WyJST0xFX1VTRVIiXSwiZCpzaWciOnsicCI6InpXNzB4IiwicyI6bnVsbCwidSI6ImMyYWIyZWRkODAwZDU1M2Y0OWNiNzQ4NmU4N2E5OGU0IiwiZiI6InhzeiM5In19.auKbkiFc9TVwjrD26menf4uN2Vp_RIRwbfbQ3ULFD7VPJ6PhWiW_fePFS2GxrXwUmj3Wd6dX-dI5-IBlt2J22g';
+  const order = await Order.findAll({ where: { status: 'SHIPPED' } });
+  const tracking = {};
+  // loop over array to get tracking no.
+  order.forEach((el) => {
+    tracking[el.tracking] = el.id;
+  });
+
+  // sent request to EMS API
+  if (order.length <= 0) {
+    return;
+  }
+  const response = await getAllComplete(Object.keys(tracking), token);
+  const completedTracking = Object.keys(response);
+  await Order.update(
+    { status: 'COMPLETED' },
+    { where: { tracking: completedTracking } }
+  );
+};
+
+updateOrderStatus();
 
 const subTotal = (order) =>
   order.orderItem.reduce((acc, curr) => curr.price * curr.amount + acc, 0);
@@ -256,10 +281,10 @@ exports.getMyOrder = async (req, res, next) => {
   res.json({ order });
 };
 exports.getMyOrderById = async (req, res, next) => {
+  const token =
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJzZWN1cmUtYXBpIiwiYXVkIjoic2VjdXJlLWFwcCIsInN1YiI6IkF1dGhvcml6YXRpb24iLCJleHAiOjE2NDYwNjYwMjYsInJvbCI6WyJST0xFX1VTRVIiXSwiZCpzaWciOnsicCI6InpXNzB4IiwicyI6bnVsbCwidSI6ImMyYWIyZWRkODAwZDU1M2Y0OWNiNzQ4NmU4N2E5OGU0IiwiZiI6InhzeiM5In19.auKbkiFc9TVwjrD26menf4uN2Vp_RIRwbfbQ3ULFD7VPJ6PhWiW_fePFS2GxrXwUmj3Wd6dX-dI5-IBlt2J22g';
   const { id: userId } = req.user;
   const { id } = req.params;
-  console.log('user id-->', userId);
-  console.log('Id-->', id);
   const order = await Order.findOne({
     where: {
       id,
@@ -292,7 +317,12 @@ exports.getMyOrderById = async (req, res, next) => {
     0
   );
 
-  res.json({ order, subTotal });
+  let trackingInfo = null;
+  if (order.tracking) {
+    trackingInfo = await getItemStatus(order.tracking, token);
+  }
+  console.log('--------------->', trackingInfo);
+  res.json({ order, subTotal, trackingInfo: trackingInfo });
 };
 
 exports.getUserOrder = getUserOrder;

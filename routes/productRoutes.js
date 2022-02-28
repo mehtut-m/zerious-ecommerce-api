@@ -5,6 +5,7 @@ const router = express.Router();
 const {
   createProduct,
   getAllProduct,
+  getProductByCategory,
   getProductByHobby,
   getProductById,
   searchProduct,
@@ -16,8 +17,7 @@ const upload = require('../middlewares/upload');
 router.get('/', getAllProduct);
 
 router.get('/hobby/:hobbyId', getProductByHobby);
-// Get product by id
-// router.post('/:id',);
+router.get('/category/:categoryId', getProductByCategory);
 
 router.get('/trending/', trendingProduct);
 router.get('/search/', searchProduct);

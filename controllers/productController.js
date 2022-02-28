@@ -58,7 +58,7 @@ exports.getAllProduct = async (req, res, next) => {
         {
           model: Brand,
           as: 'brand',
-          attributes: { exclude: ['createdAt', 'updatedAt'] },
+          attributes: { exclude: ['updatedAt'] },
         },
         {
           model: Category,
@@ -76,7 +76,7 @@ exports.getAllProduct = async (req, res, next) => {
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
       ],
-      attributes: { exclude: ['createdAt', 'updatedAt'] },
+      attributes: { exclude: ['updatedAt'] },
     });
     res.json({ products });
   } catch (err) {
@@ -88,56 +88,71 @@ exports.getAllProduct = async (req, res, next) => {
 exports.getProductById = async (req, res, next) => {
   const { id } = req.params;
 
-  const product = await Product.findOne({
-    where: { id },
-    include: [
-      {
-        model: Brand,
-        as: 'brand',
-        attributes: { exclude: ['createdAt', 'updatedAt'] },
-      },
-      {
-        model: ProductImage,
-        as: 'productImg',
-        attributes: { exclude: ['createdAt', 'updatedAt'] },
-      },
-      {
-        model: Category,
-        as: 'category',
-        attributes: { exclude: ['createdAt', 'updatedAt', 'hobbyId'] },
-        include: {
-          as: 'hobby',
-          model: Hobby,
+  let product = await Product.findOne(
+    {
+      where: { id },
+      include: [
+        {
+          model: Brand,
+          as: 'brand',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
-      },
-    ],
-    attributes: { exclude: ['createdAt', 'updatedAt'] },
-  });
+        {
+          model: ProductImage,
+          as: 'productImg',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+        {
+          model: Category,
+          as: 'category',
+          attributes: { exclude: ['createdAt', 'updatedAt', 'hobbyId'] },
+          include: {
+            as: 'hobby',
+            model: Hobby,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+        },
+      ],
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+    },
+    { raw: true }
+  );
+  product = JSON.parse(JSON.stringify(product));
 
   res.json({ product });
 };
 
 exports.getProductByHobby = async (req, res, next) => {
   const { hobbyId } = req.params;
+
   try {
     const product = await Product.findAll({
       include: [
         {
           model: Brand,
+          as: 'brand',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+        {
+          model: ProductImage,
+          as: 'productImg',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
         {
           model: Category,
+          as: 'category',
           attributes: { exclude: ['createdAt', 'updatedAt'] },
+          where: { hobbyId },
           include: {
             model: Hobby,
+            as: 'hobby',
             attributes: { exclude: ['createdAt', 'updatedAt'] },
             where: { id: hobbyId },
           },
         },
       ],
     });
+    console.log(product);
     res.json({ product });
   } catch (err) {
     next(err);
@@ -146,6 +161,35 @@ exports.getProductByHobby = async (req, res, next) => {
 
 exports.getProductByCategory = async (req, res, next) => {
   try {
+    const { categoryId } = req.params;
+    console.log(categoryId);
+    const product = await Product.findAll({
+      include: [
+        {
+          model: Brand,
+          as: 'brand',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+        {
+          model: ProductImage,
+          as: 'productImg',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+        {
+          model: Category,
+          as: 'category',
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+          where: { id: categoryId },
+          include: {
+            model: Hobby,
+            as: 'hobby',
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+        },
+      ],
+    });
+    console.log(product);
+    res.json({ product });
   } catch (err) {
     next(err);
   }
@@ -216,7 +260,6 @@ exports.createProduct = async (req, res, next) => {
 exports.trendingProduct = async (req, res, next) => {
   try {
     const productIds = await Product.findAll({
-      // attributes: ['id', 'name', 'price', 'description'],
       attributes: ['id'],
       order: [[fn('SUM', col('orderItem.amount')), 'DESC']],
       group: ['product.id'],
