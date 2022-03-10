@@ -52,11 +52,11 @@ exports.checkOutCreditCard = async (req, res, next) => {
     });
     // Create Charge for Omise
     const charge = await omise.charges.create({
-      amount: 2000,
+      amount: 20000,
       currency: 'thb',
       customer: customer.id,
     });
-    // console.log('Charge ', charge);
+
     console.log(charge);
     // If payment is not success then send the response
     if (charge.status !== 'successful') {
